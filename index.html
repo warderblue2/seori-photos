@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Photos — Seori Self Photo Studio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f9f9f9; color: #1a1a1a;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 2rem 1rem;
+    }
+    header { text-align: center; margin-bottom: 2rem; }
+    .studio { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+    .tagline { font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: #888; margin-top: 4px; }
+    .divider { width: 40px; height: 1px; background: #ddd; margin: 1.5rem auto; }
+    h1 { font-size: 16px; font-weight: 400; color: #555; text-align: center; margin-bottom: 2rem; letter-spacing: 0.05em; }
+
+    /* Loading */
+    #loading { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2rem 0; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #eee; border-top: 3px solid #1a1a1a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 15px; color: #555; }
+    .loading-sub { font-size: 12px; color: #aaa; }
+
+    /* Error */
+    #error { display: none; text-align: center; color: #888; padding: 2rem; font-size: 14px; }
+
+    /* Photos */
+    #photos { display: none; flex-direction: column; gap: 1.5rem; width: 100%; max-width: 420px; }
+    .photo-card { background: #fff; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+    .photo-card .preview { width: 100%; aspect-ratio: 5/7; background: #f0f0f0; overflow: hidden; }
+    .photo-card .preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-card .card-body { padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+    .photo-card .label { font-size: 13px; color: #888; }
+    .btn-download {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #1a1a1a; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; font-size: 13px; text-decoration: none;
+    }
+    .btn-download svg { width: 14px; height: 14px; }
+    footer { margin-top: 3rem; text-align: center; font-size: 11px; color: #bbb; letter-spacing: 0.1em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="studio">seori</div>
+    <div class="tagline">Self Photo Studio</div>
+  </header>
+  <div class="divider"></div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Preparing your photos...</div>
+    <div class="loading-sub">This will only take a moment</div>
+  </div>
+
+  <div id="error">Photos not found. Please try scanning again.</div>
+
+  <h1 id="ready-title" style="display:none">Your photos are ready</h1>
+  <div id="photos">
+    <div class="photo-card">
+      <div class="preview"><img id="img-bordered" src="" alt="Photo with border"/></div>
+      <div class="card-body">
+        <span class="label">With border</span>
+        <a id="dl-bordered" class="btn-download" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+      </div>
+    </div>
+    <div class="photo-card">
+      <div class="preview"><img id="img-raw" src="" alt="Photo without border"/></div>
+      <div class="card-body">
+        <span class="label">Without border</span>
+        <a id="dl-raw" class="btn-download" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>seori self photo studio &nbsp;·&nbsp; thank you</footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const bid = params.get('b'); // bordered file id
+    const rid = params.get('r'); // raw file id
+
+    if (!bid || !rid) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+    } else {
+      // Set download links immediately
+      document.getElementById('dl-bordered').href = 'https://drive.google.com/uc?export=download&id=' + bid;
+      document.getElementById('dl-raw').href = 'https://drive.google.com/uc?export=download&id=' + rid;
+
+      const borderedSrc = 'https://lh3.googleusercontent.com/d/' + bid;
+      const rawSrc      = 'https://lh3.googleusercontent.com/d/' + rid;
+
+      // Try loading bordered image, retry every 3s up to 2 min
+      const MAX = 40;
+      let attempts = 0;
+
+      function tryLoad() {
+        attempts++;
+        const test = new Image();
+        test.onload = function() {
+          // Images ready — show them
+          document.getElementById('img-bordered').src = borderedSrc;
+          document.getElementById('img-raw').src = rawSrc;
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('ready-title').style.display = 'block';
+          document.getElementById('photos').style.display = 'flex';
+        };
+        test.onerror = function() {
+          if (attempts < MAX) {
+            setTimeout(tryLoad, 3000);
+          } else {
+            // Timeout — show anyway
+            document.getElementById('img-bordered').src = borderedSrc;
+            document.getElementById('img-raw').src = rawSrc;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('ready-title').style.display = 'block';
+            document.getElementById('photos').style.display = 'flex';
+          }
+        };
+        test.src = borderedSrc + '?t=' + Date.now();
+      }
+
+      tryLoad();
+    }
+  </script>
+</body>
+</html>
